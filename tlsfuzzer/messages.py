@@ -1030,9 +1030,10 @@ class CertificateVerifyGenerator(HandshakeProtocolMessageGenerator):
                 # "r" and "s" variables
                 # given that indexing would fail if it was asked to index
                 # over an inexistent byte, we need to limit the numbers
-                max_byte = len(signature)
-                subs = {}
-                xors = {}
+                signature = bytearray(signature)
+                max_byte = len(signature) - 1
+                subs = None
+                xors = None
                 if self.padding_subs:
                     subs = dict([(min(k, max_byte), v) for k, v in
                                  self.padding_subs.items()])
