@@ -355,7 +355,7 @@ def main():
         conversations["check {0} signature {1}".format(
                       name, result)] = conversation
 
-    # verify that a rsa-pss signature with mismatched message hash fails
+    # verify that an ECDSA signature with mismatched message hash fails
     if len(private_key) == 256:
         sig_alg = SignatureScheme.ecdsa_secp384r1_sha384
         msg_alg = SignatureScheme.ecdsa_secp256r1_sha256
@@ -412,7 +412,7 @@ def main():
     else:
         assert len(private_key) == 521
         siglen = 137
-    for pos in range(-1, -(siglen + 1), -1):
+    for pos in range(siglen):
         for xor in [0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80]:
             conversation = Connect(hostname, port)
             node = conversation
@@ -440,9 +440,9 @@ def main():
             node = node.add_child(ExpectCertificateVerify())
             node = node.add_child(ExpectFinished())
             node = node.add_child(CertificateGenerator(X509CertChain([cert])))
-            node = node.add_child(fuzz_message(
-                CertificateVerifyGenerator(private_key),
-                xors={pos:xor}))
+            node = node.add_child(
+                CertificateVerifyGenerator(private_key,
+                                           padding_xors={pos:xor}))
             node = node.add_child(FinishedGenerator())
             node = node.add_child(ExpectAlert(
                 AlertLevel.fatal, AlertDescription.decrypt_error))
@@ -494,6 +494,8 @@ def main():
     print("ECDSA signatures in TLS1.3; SHA224 and SHA1 signatures are always")
     print("refused, Other signatures are accepted or refused accordingly to")
     print("the key provided.\n")
+    print("Test should be run three times, once each with P-256, P-384 and")
+    print("P-521 client certificate.\n")
     print("version: {0}\n".format(version))
 
     print("Test end")
